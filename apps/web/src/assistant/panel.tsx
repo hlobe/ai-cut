@@ -1,7 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { Delete02Icon, MailSend01Icon } from "@hugeicons/core-free-icons";
+import {
+	Delete02Icon,
+	MailSend01Icon,
+	Mic01Icon,
+	StopIcon,
+} from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -9,6 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/utils/ui";
 import { sendMessage } from "./api";
 import { useAssistantStore } from "./store";
+import { useVoiceInput } from "./use-voice-input";
 
 export function AssistantPanel() {
 	const {
@@ -21,6 +27,7 @@ export function AssistantPanel() {
 	} = useAssistantStore();
 	const [input, setInput] = useState("");
 	const [streamingText, setStreamingText] = useState("");
+	const voice = useVoiceInput((text) => setInput((prev) => prev + text));
 
 	const handleSend = async () => {
 		const text = input.trim();
@@ -143,6 +150,35 @@ export function AssistantPanel() {
 					<Button
 						size="icon"
 						className="size-8 shrink-0 self-end"
+						variant={voice.state === "recording" ? "destructive" : "default"}
+						disabled={isLoading || voice.state === "transcribing"}
+						onClick={() => {
+							if (voice.state === "recording") {
+								voice.stop();
+								return;
+							}
+
+							if (voice.state === "idle" || voice.state === "error") {
+								void voice.start();
+							}
+						}}
+						aria-label={
+							voice.state === "recording"
+								? "Stop voice input"
+								: "Start voice input"
+						}
+					>
+						{voice.state === "recording" ? (
+							<HugeiconsIcon icon={StopIcon} size={14} />
+						) : voice.state === "transcribing" ? (
+							<span className="animate-spin">◌</span>
+						) : (
+							<HugeiconsIcon icon={Mic01Icon} size={14} />
+						)}
+					</Button>
+					<Button
+						size="icon"
+						className="size-8 shrink-0 self-end"
 						disabled={!input.trim() || isLoading}
 						onClick={() => void handleSend()}
 						aria-label="Send assistant message"
@@ -150,6 +186,11 @@ export function AssistantPanel() {
 						<HugeiconsIcon icon={MailSend01Icon} size={14} />
 					</Button>
 				</div>
+				{voice.error && (
+					<p className="text-destructive mt-1 px-1 text-[0.65rem]">
+						{voice.error}
+					</p>
+				)}
 			</div>
 		</div>
 	);
