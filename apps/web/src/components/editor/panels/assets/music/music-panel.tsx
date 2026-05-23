@@ -37,7 +37,7 @@ export function MusicPanel() {
 
 	const hasPending = tracks.some((t) => t.status === "pending");
 
-	const fetchAuth = useCallback(async () => {
+	const fetchAuth = useCallback(async (showError = false) => {
 		try {
 			const r = await fetch(`${SPIKE_BASE_URL}/api/suno/auth/status`);
 			if (r.ok) {
@@ -45,7 +45,11 @@ export function MusicPanel() {
 				setAuth(data);
 				return data;
 			}
-		} catch {}
+		} catch {
+			// Wrapper not running — show login screen silently
+			setAuth({ logged_in: false, status: "idle", error: "" });
+			if (showError) setError("Could not reach suno wrapper");
+		}
 		return null;
 	}, []);
 
@@ -56,9 +60,9 @@ export function MusicPanel() {
 		} catch {}
 	}, []);
 
-	// Initial load
+	// Initial load — silent, no error if wrapper is down
 	useEffect(() => {
-		fetchAuth().then((a) => {
+		fetchAuth(false).then((a) => {
 			if (a?.logged_in) fetchTracks();
 		});
 	}, [fetchAuth, fetchTracks]);
@@ -102,10 +106,11 @@ export function MusicPanel() {
 		setLoginLoading(true);
 		setError(null);
 		try {
-			await fetch(`${SPIKE_BASE_URL}/api/suno/auth/login`, { method: "POST" });
-			await fetchAuth();
+			const r = await fetch(`${SPIKE_BASE_URL}/api/suno/auth/login`, { method: "POST" });
+			if (!r.ok) throw new Error(await r.text());
+			await fetchAuth(true);
 		} catch (e) {
-			setError("Could not reach suno wrapper");
+			setError("Suno wrapper недоступен. Запусти: uvicorn app.main:app --port 8400");
 			setLoginLoading(false);
 		}
 	};

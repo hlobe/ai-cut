@@ -199,9 +199,9 @@ function EditorLayout() {
 							<ResizableHandle withHandle />
 
 							<ResizablePanel
-								defaultSize={20}
-								minSize={15}
-								maxSize={35}
+								defaultSize={25}
+								minSize={18}
+								maxSize={40}
 								className="min-w-0"
 							>
 								<AssistantPanel />
