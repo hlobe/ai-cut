@@ -1052,7 +1052,7 @@ function AIFrameElementContent({
 	if ((status === "image_ready" || status === "video_ready") && thumb) {
 		return (
 			<div
-				className="relative size-full bg-cover bg-center"
+				className="relative size-full bg-contain bg-center bg-no-repeat bg-black/20"
 				style={{ backgroundImage: `url(${thumb})` }}
 			>
 				{status === "video_ready" && (

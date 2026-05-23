@@ -263,7 +263,7 @@ function AddAIFrameButton() {
 
 	const handleAdd = () => {
 		const currentTime = editor.playback.getCurrentTime();
-		const duration = 10 * TICKS_PER_SECOND;
+		const duration = 5 * TICKS_PER_SECOND;
 		editor.timeline.insertElement({
 			element: {
 				type: "ai-frame",
