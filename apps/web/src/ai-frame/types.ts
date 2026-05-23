@@ -27,6 +27,7 @@ export interface AIFrameParams {
 	videoUrl?: string;
 	videoJobId?: string;
 	errorMessage?: string;
+	progress?: number; // 0–100, set during generation
 }
 
 export interface AIFrameElement {

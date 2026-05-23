@@ -8,6 +8,12 @@ import type { AIFrameElement, AIFrameParams, AIFrameStage } from "./types";
 const POLL_INTERVAL_MS = 2000;
 const POLL_TIMEOUT_MS = 120_000; // 2 min
 
+// Estimated generation durations for progress calculation (ms)
+const ESTIMATED_MS: Record<string, number> = {
+	generating_image: 10_000,  // grok image ~10s
+	generating_video: 60_000,  // grok video ~60s
+};
+
 interface UseAIFrameOptions {
 	element: AIFrameElement;
 	trackId: string;
@@ -45,20 +51,24 @@ export function useAIFrame({ element, trackId }: UseAIFrameOptions) {
 
 	// Poll a job until succeeded/failed or timeout
 	const startPoll = useCallback(
-		(jobId: string, onSuccess: (url: string) => void) => {
+		(jobId: string, generatingStatus: string, onSuccess: (url: string) => void) => {
 			stopPoll();
 			startedAtRef.current = Date.now();
+			const estimated = ESTIMATED_MS[generatingStatus] ?? 30_000;
 
 			pollRef.current = setInterval(async () => {
 				try {
-					if (
-						startedAtRef.current !== null &&
-						Date.now() - startedAtRef.current > POLL_TIMEOUT_MS
-					) {
+					const elapsed = Date.now() - (startedAtRef.current ?? Date.now());
+
+					if (elapsed > POLL_TIMEOUT_MS) {
 						stopPoll();
-						patchAIParams({ status: "error", errorMessage: "Generation timed out" });
+						patchAIParams({ status: "error", errorMessage: "Generation timed out", progress: undefined });
 						return;
 					}
+
+					// Update progress (cap at 95% until done)
+					const progress = Math.min(95, Math.round((elapsed / estimated) * 100));
+					patchAIParams({ progress });
 
 					const job = await spikeClient.getJob(jobId);
 					const terminalStatuses: JobStatus[] = ["succeeded", "failed"];
@@ -71,6 +81,7 @@ export function useAIFrame({ element, trackId }: UseAIFrameOptions) {
 						patchAIParams({
 							status: "error",
 							errorMessage: job.error ?? "Generation failed",
+							progress: undefined,
 						});
 						return;
 					}
@@ -80,12 +91,14 @@ export function useAIFrame({ element, trackId }: UseAIFrameOptions) {
 					const raw = artifact?.url ?? artifact?.path ?? "";
 					const url =
 						raw.startsWith("http") ? raw : `${SPIKE_BASE_URL}${raw}`;
+					patchAIParams({ progress: 100 });
 					onSuccess(url);
 				} catch (err) {
 					stopPoll();
 					patchAIParams({
 						status: "error",
 						errorMessage: err instanceof Error ? err.message : "Unknown error",
+						progress: undefined,
 					});
 				}
 			}, POLL_INTERVAL_MS);
@@ -166,8 +179,8 @@ export function useAIFrame({ element, trackId }: UseAIFrameOptions) {
 				}
 
 				patchAIParams({ imageJobId: job.id });
-				startPoll(job.id, (url) => {
-					patchAIParams({ status: "image_ready", imageUrl: url });
+				startPoll(job.id, "generating_image", (url) => {
+					patchAIParams({ status: "image_ready", imageUrl: url, progress: undefined });
 				});
 			} else {
 				// video stage
@@ -189,8 +202,8 @@ export function useAIFrame({ element, trackId }: UseAIFrameOptions) {
 				});
 
 				patchAIParams({ videoJobId: job.id });
-				startPoll(job.id, (url) => {
-					patchAIParams({ status: "video_ready", videoUrl: url });
+				startPoll(job.id, "generating_video", (url) => {
+					patchAIParams({ status: "video_ready", videoUrl: url, progress: undefined });
 				});
 			}
 		} catch (err) {

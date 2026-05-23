@@ -1020,16 +1020,24 @@ function AIFrameElementContent({
 }: {
 	element: Extract<TimelineElementType, { type: "ai-frame" }>;
 }) {
-	const { status, imageUrl, videoUrl } = element.aiParams;
+	const { status, imageUrl, videoUrl, progress } = element.aiParams;
 
 	if (status === "generating_image" || status === "generating_video") {
+		const pct = progress ?? 0;
 		return (
 			<div
-				className="relative flex size-full items-center gap-1.5 px-2 text-xs text-white"
+				className="relative flex size-full items-center gap-1.5 overflow-hidden px-2 text-xs text-white"
 				style={{ backgroundColor: "#4b5563" }}
 			>
-				<span className="animate-spin">⏳</span>
-				<span className="truncate">Generating...</span>
+				{/* progress fill */}
+				<div
+					className="absolute inset-0 bg-violet-600/60 transition-all duration-500"
+					style={{ width: `${pct}%` }}
+				/>
+				<span className="relative animate-spin">⏳</span>
+				<span className="relative truncate">
+					{pct > 0 ? `${pct}%` : "Generating..."}
+				</span>
 				{status === "generating_video" &&
 					element.aiParams.videoDuration > 0 && (
 						<div className="pointer-events-none absolute inset-y-1 right-1 w-4 rounded-r-sm border-r border-dashed border-white/60" />
