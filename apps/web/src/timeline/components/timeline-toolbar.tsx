@@ -7,6 +7,8 @@ import {
 	TooltipContent,
 } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
+import { DEFAULT_AI_FRAME_PARAMS } from "@/ai-frame/types";
+import { TICKS_PER_SECOND } from "@/wasm";
 import {
 	SplitButton,
 	SplitButtonLeft,
@@ -44,6 +46,7 @@ import {
 	Layers01Icon,
 	Chart03Icon,
 	Unlink02Icon,
+	MagicWand05Icon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { OcRippleIcon } from "@/components/icons";
@@ -246,8 +249,51 @@ function ToolbarLeftSection() {
 						}
 					/>
 				</GraphEditorPopover>
+
+				<div className="bg-border mx-1 h-6 w-px" />
+
+				<AddAIFrameButton />
 			</TooltipProvider>
 		</div>
+	);
+}
+
+function AddAIFrameButton() {
+	const editor = useEditor();
+
+	const handleAdd = () => {
+		const currentTime = editor.playback.getCurrentTime();
+		const duration = 10 * TICKS_PER_SECOND;
+		editor.timeline.insertElement({
+			element: {
+				type: "ai-frame",
+				name: "AI Frame",
+				startTime: currentTime,
+				duration,
+				trimStart: 0,
+				trimEnd: duration,
+				params: {},
+				aiParams: { ...DEFAULT_AI_FRAME_PARAMS },
+			},
+			placement: { mode: "auto", trackType: "ai-frame" },
+		});
+	};
+
+	return (
+		<Tooltip delayDuration={200}>
+			<TooltipTrigger asChild>
+				<Button
+					variant="outline"
+					size="sm"
+					className="h-7 gap-1.5 px-2 text-xs text-violet-400 border-violet-400/30 hover:bg-violet-400/10"
+					onClick={handleAdd}
+				>
+					<HugeiconsIcon icon={MagicWand05Icon} size={13} />
+					AI Frame
+				</Button>
+			</TooltipTrigger>
+			<TooltipContent>Add AI Frame element</TooltipContent>
+		</Tooltip>
 	);
 }
 
