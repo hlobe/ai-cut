@@ -12,6 +12,7 @@ import { Timeline } from "@/timeline/components";
 import { PreviewPanel } from "@/preview/components";
 import { EditorHeader } from "@/components/editor/editor-header";
 import { EditorProvider } from "@/components/providers/editor-provider";
+import { AssistantPanel, useAssistantStore } from "@/assistant";
 import { Onboarding } from "@/components/editor/onboarding";
 import { MigrationDialog } from "@/project/components/migration-dialog";
 import { usePanelStore } from "@/editor/panel-store";
@@ -81,6 +82,7 @@ function DegradedRendererBanner() {
 function EditorLayout() {
 	usePasteMedia();
 	const { panels, setPanel } = usePanelStore();
+	const isAssistantOpen = useAssistantStore((state) => state.isOpen);
 	const activeScene = useEditor((editor) =>
 		editor.scenes.getActiveSceneOrNull(),
 	);
@@ -191,6 +193,21 @@ function EditorLayout() {
 					>
 						<PropertiesPanel />
 					</ResizablePanel>
+
+					{isAssistantOpen && (
+						<>
+							<ResizableHandle withHandle />
+
+							<ResizablePanel
+								defaultSize={20}
+								minSize={15}
+								maxSize={35}
+								className="min-w-0"
+							>
+								<AssistantPanel />
+							</ResizablePanel>
+						</>
+					)}
 				</ResizablePanelGroup>
 			</ResizablePanel>
 

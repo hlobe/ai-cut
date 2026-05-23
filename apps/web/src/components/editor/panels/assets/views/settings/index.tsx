@@ -21,6 +21,8 @@ import {
 import { BackgroundContent } from "./background";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { NumberField } from "@/components/ui/number-field";
 import { useEditorStore } from "@/editor/editor-store";
 import { usePropertyDraft } from "@/components/editor/panels/properties/hooks/use-property-draft";
@@ -31,6 +33,7 @@ import { dimensionToAspectRatio } from "@/utils/geometry";
 import { formatNumberForDisplay } from "@/utils/math";
 import { OcSquarePlusIcon } from "@/components/icons";
 import type { TCanvasSize } from "@/project/types";
+import { useAssistantStore } from "@/assistant";
 
 type SettingsView = "project-info" | "background";
 
@@ -99,6 +102,7 @@ function useCanvasDimensionDraft({
 export function SettingsView() {
 	const [view, setView] = useState<SettingsView>("project-info");
 	const editor = useEditor();
+	const { apiKey, setApiKey } = useAssistantStore();
 	const activeProject = useEditor((e) => e.project.getActive());
 	const { canvasPresets } = useEditorStore();
 	const currentCanvasSize = activeProject.settings.canvasSize;
@@ -116,14 +120,15 @@ export function SettingsView() {
 		};
 	});
 
-	const selectedPresetId = canvasSizeMode === "preset"
-		? (presetItems.find((preset) =>
-				areCanvasSizesEqual({
-					left: preset.canvasSize,
-					right: currentCanvasSize,
-				}),
-			)?.id ?? null)
-		: null;
+	const selectedPresetId =
+		canvasSizeMode === "preset"
+			? (presetItems.find((preset) =>
+					areCanvasSizesEqual({
+						left: preset.canvasSize,
+						right: currentCanvasSize,
+					}),
+				)?.id ?? null)
+			: null;
 
 	const updateCustomCanvasSize = ({
 		canvasSize,
@@ -241,12 +246,14 @@ export function SettingsView() {
 					<Section showTopBorder={false}>
 						<SectionHeader className="justify-between">
 							<SectionTitle className="flex-1">Frame rate</SectionTitle>
-					<Select
-							value={String(Math.round(frameRateToFloat(activeProject.settings.fps)))}
-							onValueChange={(value) => {
-								const fps = floatToFrameRate(parseFloat(value));
-								editor.project.updateSettings({ settings: { fps } });
-							}}
+							<Select
+								value={String(
+									Math.round(frameRateToFloat(activeProject.settings.fps)),
+								)}
+								onValueChange={(value) => {
+									const fps = floatToFrameRate(parseFloat(value));
+									editor.project.updateSettings({ settings: { fps } });
+								}}
 							>
 								<SelectTrigger className="bg-transparent border-none p-1 h-auto">
 									<SelectValue placeholder="Select a frame rate" />
@@ -312,6 +319,26 @@ export function SettingsView() {
 									}
 								/>
 							</div>
+						</SectionContent>
+					</Section>
+					<Section
+						showTopBorder={false}
+						collapsible
+						sectionKey="settings:ai-assistant"
+					>
+						<SectionHeader>
+							<SectionTitle className="flex-1">AI Assistant</SectionTitle>
+						</SectionHeader>
+						<SectionContent className="flex flex-col gap-1.5 px-2 pb-2">
+							<Label className="text-xs">Anthropic API Key</Label>
+							<Input
+								type="password"
+								size="xs"
+								className="font-mono"
+								placeholder="sk-ant-..."
+								value={apiKey}
+								onChange={(event) => setApiKey(event.target.value)}
+							/>
 						</SectionContent>
 					</Section>
 				</div>

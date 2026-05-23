@@ -47,7 +47,10 @@ import {
 	getSourceAudioActionLabel,
 	isSourceAudioSeparated,
 } from "@/timeline/audio-separation";
-import { buildWaveformGainSamples, isElementMuted } from "@/timeline/audio-state";
+import {
+	buildWaveformGainSamples,
+	isElementMuted,
+} from "@/timeline/audio-state";
 import { getTimelinePixelsPerSecond } from "@/timeline";
 import { buildWaveformSourceKey } from "@/media/waveform-summary";
 import { addMediaTime, type MediaTime, TICKS_PER_SECOND } from "@/wasm";
@@ -277,9 +280,11 @@ export function TimelineElement({
 		time: displayedStartTime,
 		zoomLevel,
 	});
+	const elementAnimations =
+		"animations" in element ? element.animations : undefined;
 	const keyframeIndicators = isSelected
 		? getKeyframeIndicators({
-				keyframes: getElementKeyframes({ animations: element.animations }),
+				keyframes: getElementKeyframes({ animations: elementAnimations }),
 				trackId: track.id,
 				elementId: element.id,
 				displayedStartTime,
@@ -297,7 +302,7 @@ export function TimelineElement({
 	} = useKeyframeDrag({ zoomLevel, element, displayedStartTime });
 
 	const elementKeyframes = getElementKeyframes({
-		animations: element.animations,
+		animations: elementAnimations,
 	});
 
 	const isExpanded = useTimelineStore((s) =>
@@ -308,8 +313,8 @@ export function TimelineElement({
 	);
 	const expandedRows = useMemo(
 		() =>
-			isExpanded ? getExpandedRows({ animations: element.animations }) : [],
-		[isExpanded, element.animations],
+			isExpanded ? getExpandedRows({ animations: elementAnimations }) : [],
+		[isExpanded, elementAnimations],
 	);
 
 	const {
@@ -498,6 +503,34 @@ export function TimelineElement({
 							</ContextMenuItem>
 						</>
 					)}
+					{element.type === "ai-frame" &&
+						element.aiParams.status === "image_ready" && (
+							<>
+								<ContextMenuSeparator />
+								<ContextMenuItem
+									onClick={(event: React.MouseEvent) => {
+										event.stopPropagation();
+										// TODO T5: convert to image
+									}}
+								>
+									Convert to Image
+								</ContextMenuItem>
+							</>
+						)}
+					{element.type === "ai-frame" &&
+						element.aiParams.status === "video_ready" && (
+							<>
+								<ContextMenuSeparator />
+								<ContextMenuItem
+									onClick={(event: React.MouseEvent) => {
+										event.stopPropagation();
+										// TODO T5: convert to video
+									}}
+								>
+									Convert to Video
+								</ContextMenuItem>
+							</>
+						)}
 					<ContextMenuSeparator />
 					<DeleteMenuItem
 						isMultipleSelected={selectedElements.length > 1}
@@ -551,6 +584,8 @@ function ElementInner({
 	const isReducedOpacity =
 		(canElementBeHidden(visibleElement) && visibleElement.hidden) ||
 		isDropTarget;
+	const canShowResizeHandles =
+		element.type !== "ai-frame" || element.aiParams.status === "video_ready";
 	return (
 		<div
 			className="absolute top-0 bottom-0"
@@ -603,7 +638,7 @@ function ElementInner({
 				</div>
 			</div>
 
-			{isSelected && (
+			{isSelected && canShowResizeHandles && (
 				<>
 					<ResizeHandle
 						side="left"
@@ -909,7 +944,9 @@ function TextElementContent({
 	return (
 		<div className="flex size-full items-center justify-start pl-2">
 			<span className="truncate text-xs text-white">
-				{typeof element.params.content === "string" ? element.params.content : ""}
+				{typeof element.params.content === "string"
+					? element.params.content
+					: ""}
 			</span>
 		</div>
 	);
@@ -974,6 +1011,79 @@ function GraphicElementContent({
 				unoptimized
 			/>
 			<span className="truncate text-xs text-white">{element.name}</span>
+		</div>
+	);
+}
+
+function AIFrameElementContent({
+	element,
+}: {
+	element: Extract<TimelineElementType, { type: "ai-frame" }>;
+}) {
+	const { status, imageSlots, selectedImageIdx, videoUrl, progress } = element.aiParams;
+	const safeSlots = imageSlots ?? [null, null, null, null];
+	const selectedImageUrl = safeSlots[selectedImageIdx ?? 0] ?? undefined;
+
+	if (status === "generating_image" || status === "generating_video") {
+		const pct = progress ?? 0;
+		return (
+			<div
+				className="relative flex size-full items-center gap-1.5 overflow-hidden px-2 text-xs text-white"
+				style={{ backgroundColor: "#4b5563" }}
+			>
+				{/* progress fill */}
+				<div
+					className="absolute inset-0 bg-violet-600/60 transition-all duration-500"
+					style={{ width: `${pct}%` }}
+				/>
+				<span className="relative animate-spin">⏳</span>
+				<span className="relative truncate">
+					{pct > 0 ? `${pct}%` : "Generating..."}
+				</span>
+				{status === "generating_video" &&
+					element.aiParams.videoDuration > 0 && (
+						<div className="pointer-events-none absolute inset-y-1 right-1 w-4 rounded-r-sm border-r border-dashed border-white/60" />
+					)}
+			</div>
+		);
+	}
+
+	const thumb = selectedImageUrl ?? videoUrl;
+	if ((status === "image_ready" || status === "video_ready") && thumb) {
+		return (
+			<div
+				className="relative size-full bg-cover bg-center"
+				style={{ backgroundImage: `url(${thumb})` }}
+			>
+				{status === "video_ready" && (
+					<div className="absolute right-1 bottom-1 rounded bg-black/50 px-1 text-[0.55rem] text-white">
+						▶
+					</div>
+				)}
+			</div>
+		);
+	}
+
+	if (status === "error") {
+		return (
+			<div
+				className="flex size-full items-center gap-1 px-2 text-xs text-white"
+				style={{ backgroundColor: "#b91c1c" }}
+			>
+				<span>⚠️</span>
+				<span className="truncate">
+					{element.aiParams.errorMessage ?? "Error"}
+				</span>
+			</div>
+		);
+	}
+
+	return (
+		<div
+			className="flex size-full items-center px-2 text-xs text-white"
+			style={{ backgroundColor: "#4b5563" }}
+		>
+			<span>✨ AI Frame</span>
 		</div>
 	);
 }
@@ -1178,6 +1288,8 @@ function ElementContent({ element, track }: ElementContentProps) {
 		case "video":
 		case "image":
 			return <TiledMediaContent element={element} track={track} />;
+		case "ai-frame":
+			return <AIFrameElementContent element={element} />;
 	}
 }
 

@@ -12,6 +12,7 @@ import type {
 	AudioElement,
 	TimelineElement,
 } from "@/timeline";
+import type { AIFrameElement } from "@/ai-frame/types";
 import type { MediaAsset } from "@/media/types";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
@@ -23,10 +24,14 @@ import {
 	DashboardSpeed02Icon,
 } from "@hugeicons/core-free-icons";
 import { ElementParamsTab } from "./components/element-params-tab";
-import { ClipEffectsTab, StandaloneEffectTab } from "@/effects/components/effects-tab";
+import {
+	ClipEffectsTab,
+	StandaloneEffectTab,
+} from "@/effects/components/effects-tab";
 import { MasksTab } from "@/masks/components/masks-tab";
 import { SpeedTab } from "@/speed/components/speed-tab";
 import { GraphicTab } from "@/graphics/components/graphic-tab";
+import { AIFrameInspector } from "@/ai-frame/inspector";
 import { OcShapesIcon } from "@/components/icons";
 
 const TRANSFORM_PARAM_KEYS = [
@@ -201,7 +206,9 @@ function buildGraphicTab({
 		id: "graphic",
 		label: "Graphic",
 		icon: <OcShapesIcon size={16} />,
-		content: ({ trackId }) => <GraphicTab element={element} trackId={trackId} />,
+		content: ({ trackId }) => (
+			<GraphicTab element={element} trackId={trackId} />
+		),
 	};
 }
 
@@ -216,6 +223,21 @@ function buildStandaloneEffectTab({
 		icon: <HugeiconsIcon icon={MagicWand05Icon} size={16} />,
 		content: ({ trackId }) => (
 			<StandaloneEffectTab element={element} trackId={trackId} />
+		),
+	};
+}
+
+function buildAIFrameTab({
+	element,
+}: {
+	element: AIFrameElement;
+}): PropertiesTabDef {
+	return {
+		id: "ai-frame",
+		label: "AI Frame",
+		icon: <HugeiconsIcon icon={MagicWand05Icon} size={16} />,
+		content: ({ trackId }) => (
+			<AIFrameInspector element={element} trackId={trackId} />
 		),
 	};
 }
@@ -350,5 +372,10 @@ export function getPropertiesConfig({
 			return getAudioConfig({ element });
 		case "effect":
 			return getEffectConfig({ element });
+		case "ai-frame":
+			return {
+				defaultTab: "ai-frame",
+				tabs: [buildAIFrameTab({ element })],
+			};
 	}
 }

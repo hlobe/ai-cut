@@ -1,4 +1,5 @@
 import type { ElementAnimations } from "@/animation/types";
+import type { AIFrameElement } from "@/ai-frame/types";
 import type { Effect } from "@/effects/types";
 import type { Mask } from "@/masks/types";
 import type { ParamValues } from "@/params";
@@ -26,7 +27,13 @@ export interface TScene {
 	updatedAt: Date;
 }
 
-export type TrackType = "video" | "text" | "audio" | "graphic" | "effect";
+export type TrackType =
+	| "video"
+	| "text"
+	| "audio"
+	| "graphic"
+	| "effect"
+	| "ai-frame";
 
 interface BaseTrack {
 	id: string;
@@ -64,14 +71,21 @@ export interface EffectTrack extends BaseTrack {
 	hidden: boolean;
 }
 
+export interface AIFrameTrack extends BaseTrack {
+	type: "ai-frame";
+	elements: AIFrameElement[];
+	hidden: boolean;
+}
+
 export type TimelineTrack =
 	| VideoTrack
 	| TextTrack
 	| AudioTrack
 	| GraphicTrack
-	| EffectTrack;
+	| EffectTrack
+	| AIFrameTrack;
 
-export type OverlayTrack = VideoTrack | TextTrack | GraphicTrack | EffectTrack;
+export type OverlayTrack = VideoTrack | TextTrack | GraphicTrack | EffectTrack | AIFrameTrack;
 
 export interface SceneTracks {
 	overlay: OverlayTrack[];
@@ -170,7 +184,8 @@ export type TimelineElement =
 	| TextElement
 	| StickerElement
 	| GraphicElement
-	| EffectElement;
+	| EffectElement
+	| AIFrameElement;
 
 export type ElementType = TimelineElement["type"];
 
@@ -216,6 +231,7 @@ export type CreateTextElement = Omit<TextElement, "id">;
 export type CreateStickerElement = Omit<StickerElement, "id">;
 export type CreateGraphicElement = Omit<GraphicElement, "id">;
 export type CreateEffectElement = Omit<EffectElement, "id">;
+export type CreateAIFrameElement = Omit<AIFrameElement, "id">;
 export type CreateTimelineElement =
 	| CreateAudioElement
 	| CreateVideoElement
@@ -223,7 +239,8 @@ export type CreateTimelineElement =
 	| CreateTextElement
 	| CreateStickerElement
 	| CreateGraphicElement
-	| CreateEffectElement;
+	| CreateEffectElement
+	| CreateAIFrameElement;
 
 export interface ElementDragState {
 	isDragging: boolean;
