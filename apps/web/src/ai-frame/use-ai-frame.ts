@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef } from "react";
 import { useEditor } from "@/editor/use-editor";
-import { spikeClient, type JobStatus } from "@/spike/client";
+import { spikeClient, SPIKE_BASE_URL, type JobStatus } from "@/spike/client";
 import type { AIFrameElement, AIFrameParams, AIFrameStage } from "./types";
 
 const POLL_INTERVAL_MS = 2000;
@@ -75,9 +75,11 @@ export function useAIFrame({ element, trackId }: UseAIFrameOptions) {
 						return;
 					}
 
-					// succeeded — pick first artifact URL
+					// succeeded — pick first artifact URL, resolve relative paths
 					const artifact = job.artifacts[0];
-					const url = artifact?.url ?? artifact?.path ?? "";
+					const raw = artifact?.url ?? artifact?.path ?? "";
+					const url =
+						raw.startsWith("http") ? raw : `${SPIKE_BASE_URL}${raw}`;
 					onSuccess(url);
 				} catch (err) {
 					stopPoll();

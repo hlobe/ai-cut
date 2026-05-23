@@ -3,10 +3,12 @@
  * Base URL from NEXT_PUBLIC_SPIKE_API_URL (default: http://localhost:8000)
  */
 
-const BASE_URL =
+export const SPIKE_BASE_URL =
 	typeof process !== "undefined"
 		? (process.env.NEXT_PUBLIC_SPIKE_API_URL ?? "http://localhost:8000")
 		: "http://localhost:8000";
+
+const BASE_URL = SPIKE_BASE_URL;
 
 export type JobStatus = "queued" | "running" | "succeeded" | "failed";
 
