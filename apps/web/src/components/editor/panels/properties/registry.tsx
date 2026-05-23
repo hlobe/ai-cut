@@ -350,5 +350,7 @@ export function getPropertiesConfig({
 			return getAudioConfig({ element });
 		case "effect":
 			return getEffectConfig({ element });
+		case "ai-frame":
+			return { defaultTab: "ai-frame", tabs: [] };
 	}
 }

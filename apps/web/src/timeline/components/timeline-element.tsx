@@ -47,7 +47,10 @@ import {
 	getSourceAudioActionLabel,
 	isSourceAudioSeparated,
 } from "@/timeline/audio-separation";
-import { buildWaveformGainSamples, isElementMuted } from "@/timeline/audio-state";
+import {
+	buildWaveformGainSamples,
+	isElementMuted,
+} from "@/timeline/audio-state";
 import { getTimelinePixelsPerSecond } from "@/timeline";
 import { buildWaveformSourceKey } from "@/media/waveform-summary";
 import { addMediaTime, type MediaTime, TICKS_PER_SECOND } from "@/wasm";
@@ -277,9 +280,11 @@ export function TimelineElement({
 		time: displayedStartTime,
 		zoomLevel,
 	});
+	const elementAnimations =
+		"animations" in element ? element.animations : undefined;
 	const keyframeIndicators = isSelected
 		? getKeyframeIndicators({
-				keyframes: getElementKeyframes({ animations: element.animations }),
+				keyframes: getElementKeyframes({ animations: elementAnimations }),
 				trackId: track.id,
 				elementId: element.id,
 				displayedStartTime,
@@ -297,7 +302,7 @@ export function TimelineElement({
 	} = useKeyframeDrag({ zoomLevel, element, displayedStartTime });
 
 	const elementKeyframes = getElementKeyframes({
-		animations: element.animations,
+		animations: elementAnimations,
 	});
 
 	const isExpanded = useTimelineStore((s) =>
@@ -308,8 +313,8 @@ export function TimelineElement({
 	);
 	const expandedRows = useMemo(
 		() =>
-			isExpanded ? getExpandedRows({ animations: element.animations }) : [],
-		[isExpanded, element.animations],
+			isExpanded ? getExpandedRows({ animations: elementAnimations }) : [],
+		[isExpanded, elementAnimations],
 	);
 
 	const {
@@ -909,7 +914,9 @@ function TextElementContent({
 	return (
 		<div className="flex size-full items-center justify-start pl-2">
 			<span className="truncate text-xs text-white">
-				{typeof element.params.content === "string" ? element.params.content : ""}
+				{typeof element.params.content === "string"
+					? element.params.content
+					: ""}
 			</span>
 		</div>
 	);
@@ -974,6 +981,48 @@ function GraphicElementContent({
 				unoptimized
 			/>
 			<span className="truncate text-xs text-white">{element.name}</span>
+		</div>
+	);
+}
+
+function AIFrameElementContent({
+	element,
+}: {
+	element: Extract<TimelineElementType, { type: "ai-frame" }>;
+}) {
+	const status =
+		"status" in element.params && typeof element.params.status === "string"
+			? element.params.status
+			: "empty";
+	const imageUrl =
+		"imageUrl" in element.params && typeof element.params.imageUrl === "string"
+			? element.params.imageUrl
+			: undefined;
+	const label =
+		status === "generating_image" || status === "generating_video"
+			? "⏳ Generating..."
+			: status === "image_ready"
+				? imageUrl
+					? ""
+					: "🖼 Image Ready"
+				: status === "video_ready"
+					? "▶ Video Ready"
+					: status === "error"
+						? "⚠️ Error"
+						: "✨ AI Frame";
+
+	return (
+		<div
+			className="flex size-full items-center justify-start overflow-hidden px-2 text-xs text-white"
+			style={{
+				backgroundColor: status === "error" ? "#b91c1c" : "#4b5563",
+				backgroundImage:
+					status === "image_ready" && imageUrl ? `url(${imageUrl})` : undefined,
+				backgroundPosition: "center",
+				backgroundSize: "cover",
+			}}
+		>
+			{label && <span className="truncate">{label}</span>}
 		</div>
 	);
 }
@@ -1178,6 +1227,8 @@ function ElementContent({ element, track }: ElementContentProps) {
 		case "video":
 		case "image":
 			return <TiledMediaContent element={element} track={track} />;
+		case "ai-frame":
+			return <AIFrameElementContent element={element} />;
 	}
 }
 

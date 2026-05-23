@@ -1,4 +1,5 @@
 import type {
+	AIFrameTrack,
 	AudioTrack,
 	EffectTrack,
 	GraphicTrack,
@@ -153,6 +154,11 @@ function buildPlacedOverlayTrack({
 			return {
 				...buildEmptyTrack({ id, type: "effect" }),
 				elements: elements as EffectTrack["elements"],
+			};
+		case "ai-frame":
+			return {
+				...buildEmptyTrack({ id, type: "ai-frame" }),
+				elements: elements as AIFrameTrack["elements"],
 			};
 	}
 }

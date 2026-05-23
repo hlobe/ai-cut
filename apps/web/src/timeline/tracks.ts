@@ -6,4 +6,5 @@ export const DEFAULT_TRACK_NAMES: Record<TrackType, string> = {
 	audio: "Audio track",
 	graphic: "Graphic track",
 	effect: "Effect track",
+	"ai-frame": "AI Frame track",
 } as const;
