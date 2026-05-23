@@ -30,6 +30,18 @@ export interface AIFrameParams {
 	progress?: number; // 0–100, set during generation
 }
 
+export const DEFAULT_AI_FRAME_PARAMS: AIFrameParams = {
+	stage: "image",
+	status: "empty",
+	imagePrompt: "",
+	editMode: false,
+	imageModel: "grok",
+	aspectRatio: "16:9",
+	videoPrompt: "",
+	videoModel: "grok",
+	videoDuration: 6,
+};
+
 export interface AIFrameElement {
 	id: string;
 	type: "ai-frame";

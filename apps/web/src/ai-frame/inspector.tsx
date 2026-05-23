@@ -14,8 +14,15 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 
-const IMAGE_MODELS = ["flux-pro", "flux-dev", "dall-e-3"];
-const VIDEO_MODELS = ["kling-v3", "kling-v2", "runway-gen3"];
+const IMAGE_MODELS = [
+	{ value: "grok", label: "Grok (~5s)" },
+	{ value: "flow", label: "Flow / Nano Banana 2 (~45s)" },
+	{ value: "gpt",  label: "GPT-4o Images (~55s)" },
+];
+const VIDEO_MODELS = [
+	{ value: "grok", label: "Grok / Luma (~60s)" },
+	{ value: "flow", label: "Flow / Veo 3.1 (~4 min)" },
+];
 const ASPECT_RATIOS = ["16:9", "9:16", "1:1"];
 const VIDEO_DURATIONS = [4, 5, 6, 8, 10];
 
@@ -144,8 +151,8 @@ export function AIFrameInspector({
 					</SelectTrigger>
 					<SelectContent>
 						{(isImageStage ? IMAGE_MODELS : VIDEO_MODELS).map((model) => (
-							<SelectItem key={model} value={model} className="text-xs">
-								{model}
+							<SelectItem key={model.value} value={model.value} className="text-xs">
+								{model.label}
 							</SelectItem>
 						))}
 					</SelectContent>
