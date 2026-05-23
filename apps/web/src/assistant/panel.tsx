@@ -72,7 +72,7 @@ export function AssistantPanel() {
 	return (
 		<div className="panel bg-background flex h-full min-w-0 flex-col overflow-hidden rounded-sm border">
 			<div className="flex h-10 shrink-0 items-center justify-between border-b px-3">
-				<span className="text-sm font-medium">AI Assistant</span>
+				<span className="text-sm font-medium">Дружок</span>
 				<Button
 					variant="ghost"
 					size="icon"

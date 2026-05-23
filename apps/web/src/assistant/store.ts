@@ -18,7 +18,7 @@ export const useAssistantStore = create<AssistantStore>()(
 	persist(
 		(set) => ({
 			messages: [],
-			isOpen: false,
+			isOpen: true,
 			isLoading: false,
 			apiKey: "",
 			addMessage: (msg) =>
