@@ -8,6 +8,7 @@ import {
 	Folder03Icon,
 	Happy01Icon,
 	HeadphonesIcon,
+	MusicNote01Icon,
 	MagicWand05Icon,
 	TextIcon,
 	Settings01Icon,
@@ -48,7 +49,7 @@ export const tabs = {
 		label: "Sounds",
 	},
 	music: {
-		icon: createHugeiconsIcon({ icon: Music01Icon }),
+		icon: createHugeiconsIcon({ icon: MusicNote01Icon }),
 		label: "Music",
 	},
 	text: {
