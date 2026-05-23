@@ -161,10 +161,9 @@ function buildTrackNodes({
 			}
 
 			if (element.type === "ai-frame") {
-				const { imageSlots, selectedImageIdx, videoUrl } = element.aiParams;
-				const imageUrl = imageSlots[selectedImageIdx] ?? null;
-				// Prefer video; fall back to selected image
-				const mediaUrl = videoUrl ?? imageUrl;
+				const { imageSlots, selectedImageIdx } = element.aiParams;
+				// Use selected image slot for canvas preview (videoUrl is for export only)
+				const mediaUrl = imageSlots[selectedImageIdx] ?? null;
 				if (mediaUrl) {
 					nodes.push(
 						new ImageNode({
