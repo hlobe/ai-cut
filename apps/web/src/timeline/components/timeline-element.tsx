@@ -503,6 +503,34 @@ export function TimelineElement({
 							</ContextMenuItem>
 						</>
 					)}
+					{element.type === "ai-frame" &&
+						element.aiParams.status === "image_ready" && (
+							<>
+								<ContextMenuSeparator />
+								<ContextMenuItem
+									onClick={(event: React.MouseEvent) => {
+										event.stopPropagation();
+										// TODO T5: convert to image
+									}}
+								>
+									Convert to Image
+								</ContextMenuItem>
+							</>
+						)}
+					{element.type === "ai-frame" &&
+						element.aiParams.status === "video_ready" && (
+							<>
+								<ContextMenuSeparator />
+								<ContextMenuItem
+									onClick={(event: React.MouseEvent) => {
+										event.stopPropagation();
+										// TODO T5: convert to video
+									}}
+								>
+									Convert to Video
+								</ContextMenuItem>
+							</>
+						)}
 					<ContextMenuSeparator />
 					<DeleteMenuItem
 						isMultipleSelected={selectedElements.length > 1}
@@ -556,6 +584,8 @@ function ElementInner({
 	const isReducedOpacity =
 		(canElementBeHidden(visibleElement) && visibleElement.hidden) ||
 		isDropTarget;
+	const canShowResizeHandles =
+		element.type !== "ai-frame" || element.aiParams.status === "video_ready";
 	return (
 		<div
 			className="absolute top-0 bottom-0"
@@ -608,7 +638,7 @@ function ElementInner({
 				</div>
 			</div>
 
-			{isSelected && (
+			{isSelected && canShowResizeHandles && (
 				<>
 					<ResizeHandle
 						side="left"
@@ -990,39 +1020,60 @@ function AIFrameElementContent({
 }: {
 	element: Extract<TimelineElementType, { type: "ai-frame" }>;
 }) {
-	const status =
-		"status" in element.params && typeof element.params.status === "string"
-			? element.params.status
-			: "empty";
-	const imageUrl =
-		"imageUrl" in element.params && typeof element.params.imageUrl === "string"
-			? element.params.imageUrl
-			: undefined;
-	const label =
-		status === "generating_image" || status === "generating_video"
-			? "⏳ Generating..."
-			: status === "image_ready"
-				? imageUrl
-					? ""
-					: "🖼 Image Ready"
-				: status === "video_ready"
-					? "▶ Video Ready"
-					: status === "error"
-						? "⚠️ Error"
-						: "✨ AI Frame";
+	const { status, imageUrl, videoUrl } = element.aiParams;
+
+	if (status === "generating_image" || status === "generating_video") {
+		return (
+			<div
+				className="relative flex size-full items-center gap-1.5 px-2 text-xs text-white"
+				style={{ backgroundColor: "#4b5563" }}
+			>
+				<span className="animate-spin">⏳</span>
+				<span className="truncate">Generating...</span>
+				{status === "generating_video" &&
+					element.aiParams.videoDuration > 0 && (
+						<div className="pointer-events-none absolute inset-y-1 right-1 w-4 rounded-r-sm border-r border-dashed border-white/60" />
+					)}
+			</div>
+		);
+	}
+
+	const thumb = imageUrl ?? videoUrl;
+	if ((status === "image_ready" || status === "video_ready") && thumb) {
+		return (
+			<div
+				className="relative size-full bg-cover bg-center"
+				style={{ backgroundImage: `url(${thumb})` }}
+			>
+				{status === "video_ready" && (
+					<div className="absolute right-1 bottom-1 rounded bg-black/50 px-1 text-[0.55rem] text-white">
+						▶
+					</div>
+				)}
+			</div>
+		);
+	}
+
+	if (status === "error") {
+		return (
+			<div
+				className="flex size-full items-center gap-1 px-2 text-xs text-white"
+				style={{ backgroundColor: "#b91c1c" }}
+			>
+				<span>⚠️</span>
+				<span className="truncate">
+					{element.aiParams.errorMessage ?? "Error"}
+				</span>
+			</div>
+		);
+	}
 
 	return (
 		<div
-			className="flex size-full items-center justify-start overflow-hidden px-2 text-xs text-white"
-			style={{
-				backgroundColor: status === "error" ? "#b91c1c" : "#4b5563",
-				backgroundImage:
-					status === "image_ready" && imageUrl ? `url(${imageUrl})` : undefined,
-				backgroundPosition: "center",
-				backgroundSize: "cover",
-			}}
+			className="flex size-full items-center px-2 text-xs text-white"
+			style={{ backgroundColor: "#4b5563" }}
 		>
-			{label && <span className="truncate">{label}</span>}
+			<span>✨ AI Frame</span>
 		</div>
 	);
 }
