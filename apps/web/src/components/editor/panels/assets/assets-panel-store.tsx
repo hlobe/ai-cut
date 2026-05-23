@@ -4,6 +4,7 @@ import { persist } from "zustand/middleware";
 import {
 	ArrowRightDoubleIcon,
 	ClosedCaptionIcon,
+	File01Icon,
 	Folder03Icon,
 	Happy01Icon,
 	HeadphonesIcon,
@@ -24,6 +25,7 @@ export const TAB_KEYS = [
 	"transitions",
 	"captions",
 	"adjustment",
+	"script",
 	"settings",
 ] as const;
 
@@ -67,6 +69,10 @@ export const tabs = {
 	adjustment: {
 		icon: createHugeiconsIcon({ icon: SlidersHorizontalIcon }),
 		label: "Adjustment",
+	},
+	script: {
+		icon: createHugeiconsIcon({ icon: File01Icon }),
+		label: "Script",
 	},
 	settings: {
 		icon: createHugeiconsIcon({ icon: Settings01Icon }),
