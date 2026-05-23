@@ -6,7 +6,8 @@ import {
 
 export interface VideoNodeParams extends VisualNodeParams {
 	url: string;
-	file: File;
+	/** Required for media-library clips; omit for URL-only sources (AI Frame video). */
+	file?: File;
 	mediaId: string;
 }
 

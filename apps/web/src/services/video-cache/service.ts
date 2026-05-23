@@ -22,6 +22,24 @@ export class VideoCache {
 	private initPromises = new Map<string, Promise<void>>();
 	private frameChain = new Map<string, Promise<unknown>>();
 	private seekGenerations = new Map<string, number>();
+	/** Cache for URL → File to avoid re-fetching on every frame */
+	private urlFileCache = new Map<string, Promise<File>>();
+
+	/** Fetch a URL as a File (cross-origin safe). Cached per URL. */
+	private getFileFromUrl(url: string): Promise<File> {
+		if (!this.urlFileCache.has(url)) {
+			const promise = fetch(url)
+				.then((r) => r.blob())
+				.then(
+					(blob) =>
+						new File([blob], "video.mp4", {
+							type: blob.type || "video/mp4",
+						}),
+				);
+			this.urlFileCache.set(url, promise);
+		}
+		return this.urlFileCache.get(url)!;
+	}
 
 	async getFrameAt({
 		mediaId,
@@ -29,10 +47,20 @@ export class VideoCache {
 		time,
 	}: {
 		mediaId: string;
-		file: File;
+		/** Pass the media File when available. For URL-only sources
+		 * (e.g. AI Frame video), omit file — the URL stored in the
+		 * existing VideoNode params is fetched automatically. */
+		file?: File;
 		time: number;
 	}): Promise<WrappedCanvas | null> {
-		await this.ensureSink({ mediaId, file });
+		// If file isn't provided, look up whether we already initialised this
+		// mediaId from a previously fetched URL (handled by ensureSinkFromUrl).
+		if (!file && !this.sinks.has(mediaId) && !this.initPromises.has(mediaId)) {
+			return null;
+		}
+		if (file) {
+			await this.ensureSink({ mediaId, file });
+		}
 
 		const sinkData = this.sinks.get(mediaId);
 		if (!sinkData) return null;
@@ -232,6 +260,19 @@ export class VideoCache {
 			sinkData.iterator = null;
 		}
 	}
+	/** Like ensureSink but fetches the file from a URL first. */
+	async ensureSinkFromUrl({
+		mediaId,
+		url,
+	}: {
+		mediaId: string;
+		url: string;
+	}): Promise<void> {
+		if (this.sinks.has(mediaId)) return;
+		const file = await this.getFileFromUrl(url);
+		await this.ensureSink({ mediaId, file });
+	}
+
 	private async ensureSink({
 		mediaId,
 		file,

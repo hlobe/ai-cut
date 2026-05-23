@@ -161,26 +161,41 @@ function buildTrackNodes({
 			}
 
 			if (element.type === "ai-frame") {
-				const { imageSlots, selectedImageIdx } = element.aiParams;
-				// Use selected image slot for canvas preview (videoUrl is for export only)
-				const mediaUrl = imageSlots[selectedImageIdx] ?? null;
-				if (mediaUrl) {
+				const { imageSlots, selectedImageIdx, videoUrl } = element.aiParams;
+				const commonParams = {
+					duration: element.duration,
+					timeOffset: element.startTime,
+					trimStart: element.trimStart,
+					trimEnd: element.trimEnd,
+					transform: buildTransformFromParams({ params: element.params }),
+					animations: element.animations,
+					opacity: readOpacityFromParams({ params: element.params }),
+					blendMode: readBlendModeFromParams({ params: element.params }),
+					effects: [],
+					masks: [],
+				};
+
+				if (videoUrl) {
+					// Video is ready — show it in the canvas preview too.
+					// file is intentionally omitted; resolve.ts fetches it from the URL.
 					nodes.push(
-						new ImageNode({
-							url: mediaUrl,
-							duration: element.duration,
-							timeOffset: element.startTime,
-							trimStart: element.trimStart,
-							trimEnd: element.trimEnd,
-							transform: buildTransformFromParams({ params: element.params }),
-							animations: element.animations,
-							opacity: readOpacityFromParams({ params: element.params }),
-							blendMode: readBlendModeFromParams({ params: element.params }),
-							effects: [],
-							masks: [],
-							...(isPreview && { maxSourceSize: PREVIEW_MAX_IMAGE_SIZE }),
+						new VideoNode({
+							mediaId: `ai-frame:${element.id}`,
+							url: videoUrl,
+							...commonParams,
 						}),
 					);
+				} else {
+					const mediaUrl = imageSlots[selectedImageIdx] ?? null;
+					if (mediaUrl) {
+						nodes.push(
+							new ImageNode({
+								url: mediaUrl,
+								...(isPreview && { maxSourceSize: PREVIEW_MAX_IMAGE_SIZE }),
+								...commonParams,
+							}),
+						);
+					}
 				}
 			}
 		}

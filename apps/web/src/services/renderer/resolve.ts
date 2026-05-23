@@ -196,6 +196,15 @@ async function resolveVideoNode({
 		return null;
 	}
 
+	// For URL-only video sources (e.g. AI Frame), ensure the sink is
+	// initialised by fetching the video blob first.
+	if (!node.params.file) {
+		await videoCache.ensureSinkFromUrl({
+			mediaId: node.params.mediaId,
+			url: node.params.url,
+		});
+	}
+
 	const sourceTimeTicks =
 		node.params.trimStart +
 		getSourceTimeAtClipTime({
