@@ -31,6 +31,11 @@ export function loadImageSource({
 
 	const promise = (async (): Promise<CachedImageSource> => {
 		const image = new Image();
+		// Set crossOrigin before src so cross-origin images (e.g. from spike_api
+		// on a different port) are not tainted when drawn to an OffscreenCanvas.
+		if (!url.startsWith("blob:") && !url.startsWith("data:")) {
+			image.crossOrigin = "anonymous";
+		}
 
 		await new Promise<void>((resolve, reject) => {
 			image.onload = () => resolve();
