@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef } from "react";
 import { useEditor } from "@/editor/use-editor";
 import { spikeClient, SPIKE_BASE_URL, type JobStatus } from "@/spike/client";
 import type { AIFrameElement, AIFrameParams, AIFrameStage } from "./types";
+import { TICKS_PER_SECOND } from "@/wasm";
 
 const POLL_INTERVAL_MS = 2000;
 const POLL_TIMEOUT_MS = 120_000; // 2 min
@@ -245,7 +246,26 @@ export function useAIFrame({ element, trackId }: UseAIFrameOptions) {
 
 				patchAIParams({ videoJobId: job.id });
 				startPoll(job.id, "generating_video", (urls) => {
-					patchAIParams({ status: "video_ready", videoUrl: urls[0], progress: undefined });
+					// Resize the timeline element to match the actual video duration
+					const newDuration = p.videoDuration * TICKS_PER_SECOND;
+					editor.timeline.updateElements({
+						updates: [
+							{
+								trackId,
+								elementId: element.id,
+								patch: {
+									duration: newDuration,
+									trimEnd: newDuration,
+									aiParams: {
+										...element.aiParams,
+										status: "video_ready",
+										videoUrl: urls[0],
+										progress: undefined,
+									},
+								},
+							},
+						],
+					});
 				});
 			}
 		} catch (err) {

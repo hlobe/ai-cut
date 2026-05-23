@@ -129,6 +129,12 @@ function SoundEffectsView() {
 
 				if (!shouldIgnore) {
 					if (!response.ok) {
+						// 401 means Freesound API key isn't configured — fail silently
+						// so the Next.js dev overlay isn't polluted with this expected error.
+						if (response.status === 401) {
+							setLoading({ loading: false });
+							return;
+						}
 						throw new Error(`Failed to fetch: ${response.status}`);
 					}
 
