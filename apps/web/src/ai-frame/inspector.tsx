@@ -13,6 +13,12 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import {
+	ContextMenu,
+	ContextMenuContent,
+	ContextMenuItem,
+	ContextMenuTrigger,
+} from "@/components/ui/context-menu";
 
 const IMAGE_MODELS = [
 	{ value: "grok", label: "Grok (~5s)" },
@@ -25,6 +31,7 @@ const VIDEO_MODELS = [
 ];
 const ASPECT_RATIOS = ["16:9", "9:16", "1:1"];
 const VIDEO_DURATIONS = [4, 5, 6, 8, 10];
+const IMAGE_COUNTS = [1, 2, 3, 4];
 
 export function AIFrameInspector({
 	element,
@@ -42,6 +49,9 @@ export function AIFrameInspector({
 		setImageModel,
 		setVideoModel,
 		setVideoDuration,
+		setImageCount,
+		setSelectedImage,
+		clearImageSlot,
 		generate,
 		resetError,
 	} = useAIFrame({ element, trackId });
@@ -51,6 +61,8 @@ export function AIFrameInspector({
 		aiParams.status === "generating_image" ||
 		aiParams.status === "generating_video";
 	const isImageStage = aiParams.stage === "image";
+	const safeImageSlots = aiParams.imageSlots ?? [null, null, null, null];
+	const hasAnyImage = safeImageSlots.some((s) => s !== null);
 	const canGenerate = !isGenerating && (
 		isImageStage ? aiParams.imagePrompt.trim().length > 0 : aiParams.videoPrompt.trim().length > 0
 	);
@@ -102,8 +114,80 @@ export function AIFrameInspector({
 				/>
 			</div>
 
+			{/* Image count (image stage only) */}
+			{isImageStage && (
+				<div className="flex flex-col gap-1.5">
+					<Label className="text-xs">Images to generate</Label>
+					<Select
+						value={String(aiParams.imageCount ?? 1)}
+						disabled={isGenerating}
+						onValueChange={(v) => setImageCount(Number(v))}
+					>
+						<SelectTrigger className="h-8 text-xs">
+							<SelectValue />
+						</SelectTrigger>
+						<SelectContent>
+							{IMAGE_COUNTS.map((n) => (
+								<SelectItem key={n} value={String(n)} className="text-xs">
+									{n} {n === 1 ? "image" : "images"}
+								</SelectItem>
+							))}
+						</SelectContent>
+					</Select>
+				</div>
+			)}
+
+			{/* Image slots grid (image stage always shown) */}
+			{isImageStage && (
+				<div className="flex flex-col gap-1.5">
+					<Label className="text-xs">Generated images</Label>
+					<div className="grid grid-cols-2 gap-1.5">
+						{safeImageSlots.map((url, idx) => (
+							<ContextMenu key={idx}>
+								<ContextMenuTrigger asChild>
+									<button
+										type="button"
+										className={[
+											"relative aspect-video overflow-hidden rounded border-2 bg-muted transition-all",
+											url ? "cursor-pointer" : "cursor-default opacity-40",
+											(aiParams.selectedImageIdx ?? 0) === idx && url
+												? "border-violet-500 ring-1 ring-violet-400"
+												: "border-transparent",
+										].join(" ")}
+										onClick={() => { if (url) setSelectedImage(idx); }}
+									>
+										{url ? (
+											// eslint-disable-next-line @next/next/no-img-element
+											<img
+												src={url}
+												alt={`Image ${idx + 1}`}
+												className="h-full w-full object-cover"
+											/>
+										) : (
+											<span className="absolute inset-0 flex items-center justify-center text-[10px] text-muted-foreground">
+												{idx + 1}
+											</span>
+										)}
+									</button>
+								</ContextMenuTrigger>
+								{url && (
+									<ContextMenuContent>
+										<ContextMenuItem
+											variant="destructive"
+											onClick={() => clearImageSlot(idx)}
+										>
+											Clear slot
+										</ContextMenuItem>
+									</ContextMenuContent>
+								)}
+							</ContextMenu>
+						))}
+					</div>
+				</div>
+			)}
+
 			{/* Edit mode */}
-			{isImageStage && aiParams.status === "image_ready" && (
+			{isImageStage && hasAnyImage && (
 				<div className="flex items-center gap-2">
 					<Checkbox
 						id="edit-mode"

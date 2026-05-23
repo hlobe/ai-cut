@@ -1020,7 +1020,9 @@ function AIFrameElementContent({
 }: {
 	element: Extract<TimelineElementType, { type: "ai-frame" }>;
 }) {
-	const { status, imageUrl, videoUrl, progress } = element.aiParams;
+	const { status, imageSlots, selectedImageIdx, videoUrl, progress } = element.aiParams;
+	const safeSlots = imageSlots ?? [null, null, null, null];
+	const selectedImageUrl = safeSlots[selectedImageIdx ?? 0] ?? undefined;
 
 	if (status === "generating_image" || status === "generating_video") {
 		const pct = progress ?? 0;
@@ -1046,7 +1048,7 @@ function AIFrameElementContent({
 		);
 	}
 
-	const thumb = imageUrl ?? videoUrl;
+	const thumb = selectedImageUrl ?? videoUrl;
 	if ((status === "image_ready" || status === "video_ready") && thumb) {
 		return (
 			<div

@@ -27,6 +27,7 @@ export interface GenerateImageRequest {
 	prompt: string;
 	aspect_ratio?: "16:9" | "9:16" | "1:1";
 	model?: string;
+	count?: number;
 }
 
 export interface GenerateVideoRequest {

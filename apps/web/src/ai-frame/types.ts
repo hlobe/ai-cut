@@ -19,7 +19,12 @@ export interface AIFrameParams {
 	editMode: boolean;
 	imageModel: string;
 	aspectRatio: string;
-	imageUrl?: string;
+	/** Up to 4 generated image URLs; null = empty slot */
+	imageSlots: (string | null)[];
+	/** Which slot is active (0-based) */
+	selectedImageIdx: number;
+	/** How many images to generate per run (1–4) */
+	imageCount: number;
 	imageJobId?: string;
 	videoPrompt: string;
 	videoModel: string;
@@ -37,6 +42,9 @@ export const DEFAULT_AI_FRAME_PARAMS: AIFrameParams = {
 	editMode: false,
 	imageModel: "grok",
 	aspectRatio: "16:9",
+	imageSlots: [null, null, null, null],
+	selectedImageIdx: 0,
+	imageCount: 1,
 	videoPrompt: "",
 	videoModel: "grok",
 	videoDuration: 6,

@@ -51,7 +51,11 @@ export function useAIFrame({ element, trackId }: UseAIFrameOptions) {
 
 	// Poll a job until succeeded/failed or timeout
 	const startPoll = useCallback(
-		(jobId: string, generatingStatus: string, onSuccess: (url: string) => void) => {
+		(
+			jobId: string,
+			generatingStatus: string,
+			onSuccess: (urls: string[]) => void,
+		) => {
 			stopPoll();
 			startedAtRef.current = Date.now();
 			const estimated = ESTIMATED_MS[generatingStatus] ?? 30_000;
@@ -86,13 +90,13 @@ export function useAIFrame({ element, trackId }: UseAIFrameOptions) {
 						return;
 					}
 
-					// succeeded — pick first artifact URL, resolve relative paths
-					const artifact = job.artifacts[0];
-					const raw = artifact?.url ?? artifact?.path ?? "";
-					const url =
-						raw.startsWith("http") ? raw : `${SPIKE_BASE_URL}${raw}`;
+					// succeeded — collect all artifact URLs, resolve relative paths
+					const urls = job.artifacts.map((artifact) => {
+						const raw = artifact.url ?? artifact.path ?? "";
+						return raw.startsWith("http") ? raw : `${SPIKE_BASE_URL}${raw}`;
+					});
 					patchAIParams({ progress: 100 });
-					onSuccess(url);
+					onSuccess(urls);
 				} catch (err) {
 					stopPoll();
 					patchAIParams({
@@ -151,18 +155,47 @@ export function useAIFrame({ element, trackId }: UseAIFrameOptions) {
 		[patchAIParams],
 	);
 
+	const setImageCount = useCallback(
+		(imageCount: number) => patchAIParams({ imageCount }),
+		[patchAIParams],
+	);
+
+	const setSelectedImage = useCallback(
+		(selectedImageIdx: number) => patchAIParams({ selectedImageIdx }),
+		[patchAIParams],
+	);
+
+	const clearImageSlot = useCallback(
+		(idx: number) => {
+			const slots = [...(element.aiParams.imageSlots ?? [null, null, null, null])];
+			slots[idx] = null;
+			const filledCount = slots.filter(Boolean).length;
+			const patch: Partial<typeof element.aiParams> = { imageSlots: slots };
+			if (filledCount === 0) patch.status = "empty";
+			// if selected slot was cleared, pick first filled slot (or keep 0)
+			if (element.aiParams.selectedImageIdx === idx) {
+				const firstFilled = slots.findIndex((s) => s !== null);
+				patch.selectedImageIdx = firstFilled >= 0 ? firstFilled : 0;
+			}
+			patchAIParams(patch);
+		},
+		[element, patchAIParams],
+	);
+
 	const generate = useCallback(async () => {
 		const { aiParams } = element;
 		const p = aiParams;
+		const imageSlots = p.imageSlots ?? [null, null, null, null];
+		const selectedImageUrl = imageSlots[p.selectedImageIdx ?? 0] ?? undefined;
 
 		try {
 			if (p.stage === "image") {
 				patchAIParams({ status: "generating_image", errorMessage: undefined });
 
 				let job;
-				if (p.editMode && p.imageUrl) {
-					// img2img
-					const res = await fetch(p.imageUrl);
+				if (p.editMode && selectedImageUrl) {
+					// img2img — use currently selected image as reference
+					const res = await fetch(selectedImageUrl);
 					const blob = await res.blob();
 					const b64 = await blobToBase64(blob);
 					job = await spikeClient.editImage({
@@ -175,20 +208,29 @@ export function useAIFrame({ element, trackId }: UseAIFrameOptions) {
 						prompt: p.imagePrompt,
 						aspect_ratio: p.aspectRatio as "16:9" | "9:16" | "1:1",
 						model: p.imageModel,
+						count: p.imageCount ?? 1,
 					});
 				}
 
 				patchAIParams({ imageJobId: job.id });
-				startPoll(job.id, "generating_image", (url) => {
-					patchAIParams({ status: "image_ready", imageUrl: url, progress: undefined });
+				startPoll(job.id, "generating_image", (urls) => {
+					// Fill slots 0..urls.length-1, clear the rest
+					const slots: (string | null)[] = [null, null, null, null];
+					urls.forEach((url, i) => { if (i < 4) slots[i] = url; });
+					patchAIParams({
+						status: "image_ready",
+						imageSlots: slots,
+						selectedImageIdx: 0,
+						progress: undefined,
+					});
 				});
 			} else {
-				// video stage
+				// video stage — use selected image as start frame
 				patchAIParams({ status: "generating_video", errorMessage: undefined });
 
 				let startFrameB64: string | undefined;
-				if (p.imageUrl) {
-					const res = await fetch(p.imageUrl);
+				if (selectedImageUrl) {
+					const res = await fetch(selectedImageUrl);
 					const blob = await res.blob();
 					startFrameB64 = await blobToBase64(blob);
 				}
@@ -202,8 +244,8 @@ export function useAIFrame({ element, trackId }: UseAIFrameOptions) {
 				});
 
 				patchAIParams({ videoJobId: job.id });
-				startPoll(job.id, "generating_video", (url) => {
-					patchAIParams({ status: "video_ready", videoUrl: url, progress: undefined });
+				startPoll(job.id, "generating_video", (urls) => {
+					patchAIParams({ status: "video_ready", videoUrl: urls[0], progress: undefined });
 				});
 			}
 		} catch (err) {
@@ -228,6 +270,9 @@ export function useAIFrame({ element, trackId }: UseAIFrameOptions) {
 		setImageModel,
 		setVideoModel,
 		setVideoDuration,
+		setImageCount,
+		setSelectedImage,
+		clearImageSlot,
 		generate,
 		resetError,
 	};
