@@ -21,13 +21,21 @@ import { DEFAULT_LOGO_URL } from "@/site/brand";
 import { SOCIAL_LINKS } from "@/site/social";
 import { toast } from "sonner";
 import { useEditor } from "@/editor/use-editor";
-import { CommandIcon, Logout05Icon } from "@hugeicons/core-free-icons";
+import {
+	CommandIcon,
+	Logout05Icon,
+	MagicWand05Icon,
+} from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { ShortcutsDialog } from "@/actions/components/shortcuts-dialog";
 import Image from "next/image";
 import { cn } from "@/utils/ui";
+import { useAssistantStore } from "@/assistant";
 
 export function EditorHeader() {
+	const isAssistantOpen = useAssistantStore((state) => state.isOpen);
+	const setIsAssistantOpen = useAssistantStore((state) => state.setIsOpen);
+
 	return (
 		<header className="bg-background flex h-[3.4rem] items-center justify-between px-3 pt-0.5">
 			<div className="flex items-center gap-1">
@@ -35,6 +43,16 @@ export function EditorHeader() {
 				<EditableProjectName />
 			</div>
 			<nav className="flex items-center gap-2">
+				<Button
+					variant={isAssistantOpen ? "secondary" : "ghost"}
+					size="sm"
+					className="h-8 gap-1.5 px-2 text-xs"
+					onClick={() => setIsAssistantOpen(!isAssistantOpen)}
+					aria-pressed={isAssistantOpen}
+				>
+					<HugeiconsIcon icon={MagicWand05Icon} size={14} />
+					AI
+				</Button>
 				<FeedbackPopover />
 				<ExportButton />
 				<ThemeToggle />
