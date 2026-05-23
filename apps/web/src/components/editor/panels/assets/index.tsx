@@ -11,6 +11,7 @@ import { StickersView } from "@/stickers/components/assets-view";
 import { TextView } from "@/text/components/assets-view";
 import { EffectsView } from "@/effects/components/assets-view";
 import { ScriptTabView } from "@/script-tab";
+import { MusicPanel } from "./music/music-panel";
 
 export function AssetsPanel() {
 	const { activeTab } = useAssetsPanelStore();
@@ -18,6 +19,7 @@ export function AssetsPanel() {
 	const viewMap: Record<Tab, React.ReactNode> = {
 		media: <MediaView />,
 		sounds: <SoundsView />,
+		music: <MusicPanel />,
 		text: <TextView />,
 		stickers: <StickersView />,
 		effects: <EffectsView />,
