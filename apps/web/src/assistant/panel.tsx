@@ -20,7 +20,6 @@ export function AssistantPanel() {
 	const {
 		messages,
 		isLoading,
-		apiKey,
 		addMessage,
 		clearMessages,
 		setIsLoading,
@@ -33,14 +32,6 @@ export function AssistantPanel() {
 		const text = input.trim();
 		if (!text || isLoading) return;
 
-		if (!apiKey) {
-			addMessage({
-				role: "assistant",
-				content: "API key not set. Go to Settings tab, AI Assistant.",
-			});
-			return;
-		}
-
 		setInput("");
 		addMessage({ role: "user", content: text });
 		setIsLoading(true);
@@ -48,7 +39,6 @@ export function AssistantPanel() {
 
 		try {
 			const result = await sendMessage({
-				apiKey,
 				messages,
 				userMessage: text,
 				onChunk: (chunk) => setStreamingText((prev) => prev + chunk),
